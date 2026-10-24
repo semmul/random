@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>랜덤 뽑기 & 조 편성 웹앱</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --accent: #f59e0b;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .app-container {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 800px;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      padding: 40px 32px;
+      border: 1px solid var(--border-color);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    textarea {
+      width: 100%;
+      height: 130px;
+      padding: 14px;
+      font-size: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .hint {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .options-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .options-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .options-row label {
+      margin-bottom: 0;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    /* 뽑기 결과 디스플레이 */
+    .draw-result-box {
+      background: linear-gradient(135deg, #eef2ff setupUi, #e0e7ff 100%);
+      border: 2px dashed #c7d2fe;
+      border-radius: 20px;
+      padding: 32px 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .draw-result-label {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    #result-display {
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 1px;
+      word-break: break-all;
+    }
+
+    /* 버튼 그룹 */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    button {
+      flex: 1;
+      min-width: 140px;
+      padding: 16px 20px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-accent {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #64748b;
+      color: white;
+    }
+
+    /* 조 편성 영역 */
+    .group-config {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .group-config input[type="number"] {
+      width: 100px;
+      padding: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      text-align: center;
+      outline: none;
+    }
+
+    .group-config input[type="number"]:focus {
+      border-color: var(--accent);
+    }
+
+    #group-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .group-card {
+      background-color: #f8fafc;
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .group-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+
+    .group-members {
+      list-style: none;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    .group-members li {
+      padding: 3px 0;
+    }
+
+    @media (max-width: 600px) {
+      .app-container {
+        padding: 24px 16px;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>🎉 랜덤 뽑기 & 조 편성 도구</h1>
+
+    <!-- 이름 입력 영역 -->
+    <div class="section">
+      <label for="names-input">참여자 이름 입력 (한 줄에 한 명씩)</label>
+      <textarea id="names-input" placeholder="김철수&#10;이영희&#10;박민수&#10;정지원" oninput="saveNames()"></textarea>
+      <div class="hint">💡 이름은 브라우저에 자동 저장되어 새로고침해도 사라지지 않습니다.</div>
+      
+      <div class="options-row">
+        <input type="checkbox" id="exclude-checkbox">
+        <label for="exclude-checkbox">이미 뽑힌 사람은 제외하기</label>
+      </div>
+    </div>
+
+    <!-- 뽑기 결과 화면 -->
+    <div class="draw-result-box">
+      <div class="draw-result-label">추첨 결과</div>
+      <div id="result-display">준비됨</div>
+    </div>
+
+    <!-- 추첨 버튼 -->
+    <div class="btn-group">
+      <button type="button" class="btn-primary" onclick="drawOnePerson()">한 명 뽑기</button>
+      <button type="button" class="btn-secondary" onclick="resetDrawHistory()">뽑힌 기록 초기화</button>
+    </div>
+
+    <!-- 조 편성 영역 -->
+    <div class="section">
+      <label>조 편성하기</label>
+      <div class="group-config">
+        <label for="group-count" style="font-size: 1rem; font-weight:600;">만들 조 수:</label>
+        <input type="number" id="group-count" min="1" max="20" value="3">
+        <button type="button" class="btn-accent" onclick="makeGroups()" style="flex:none; padding: 12px 24px; font-size:1rem;">조 편성 실행</button>
+      </div>
+      <div id="group-results"></div>
+    </div>
+  </div>
+
+  <script>
+    const namesInput = document.getElementById('names-input');
+    const excludeCheckbox = document.getElementById('exclude-checkbox');
+    const resultDisplay = document.getElementById('result-display');
+    const groupCountInput = document.getElementById('group-count');
+    const groupResults = document.getElementById('group-results');
+
+    let drawnPeople = []; // 이미 뽑힌 사람들 저장
+
+    // 페이지 로드 시 저장된 이름 불러오기
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedNames = localStorage.getItem('lecturer_random_names');
+      if (savedNames !== null) {
+        namesInput.value = savedNames;
+      } else {
+        namesInput.value = "김철수\n이영희\n박민수\n정지원\n최예은\n한지민";
+      }
+    });
+
+    // 입력된 이름 저장
+    function saveNames() {
+      localStorage.setItem('lecturer_random_names', namesInput.value);
+    }
+
+    // 유효한 이름 목록 가져오기
+    function getNamesList() {
+      return namesInput.value
+        .split('\n')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+    }
+
+    // "한 명 뽑기" 애니메이션 및 로직
+    function drawOnePerson() {
+      let names = getNamesList();
+      if (names.length === 0) {
+        alert('참여자 이름을 한 명 이상 입력해 주세요!');
+        return;
+      }
+
+      // 이미 뽑힌 사람 제외 옵션
+      if (excludeCheckbox.checked) {
+        names = names.filter(name => !drawnPeople.includes(name));
+        if (names.length === 0) {
+          alert('모든 참여자가 이미 뽑혔습니다! "뽑힌 기록 초기화"를 눌러주세요.');
+          return;
+        }
+      }
+
+      let counter = 0;
+      const maxCount = 20; // 애니메이션 회전 횟수
+      const intervalTime = 60; // 속도 (ms)
+
+      const animationInterval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * names.length);
+        resultDisplay.textContent = names[randomIndex];
+        counter++;
+
+        if (counter >= maxCount) {
+          clearInterval(animationInterval);
+          const finalWinner = names[Math.floor(Math.random() * names.length)];
+          resultDisplay.textContent = finalWinner;
+          
+          if (excludeCheckbox.checked && !drawnPeople.includes(finalWinner)) {
+            drawnPeople.push(finalWinner);
+          }
+        }
+      }, intervalTime);
+    }
+
+    // 뽑힌 기록 초기화
+    function resetDrawHistory() {
+      drawnPeople = [];
+      resultDisplay.textContent = "준비됨";
+    }
+
+    // 조 편성 기능
+    function makeGroups() {
+      const names = getNamesList();
+      if (names.length === 0) {
+        alert('참여자 이름을 한 명 이상 입력해 주세요!');
+        return;
+      }
+
+      const numGroups = parseInt(groupCountInput.value, 10);
+      if (isNaN(numGroups) || numGroups <= 0) {
+        alert('올바른 조 수를 입력해 주세요.');
+        return;
+      }
+
+      if (numGroups > names.length) {
+        alert('조 수가 전체 인원보다 많을 수 없습니다.');
+        return;
+      }
+
+      // 이름 무작위 섞기 (Fisher-Yates Shuffle)
+      const shuffled = [...names];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      // 조별로 분배
+      const groups = Array.from({ length: numGroups }, () => []);
+      shuffled.forEach((name, index) => {
+        groups[index % numGroups].push(name);
+      });
+
+      // 결과 화면에 카드 형태로 렌더링
+      groupResults.innerHTML = '';
+      groups.forEach((group, idx) => {
+        const card = document.createElement('div');
+        card.className = 'group-card';
+        
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = `${idx + 1}조 (${group.length}명)`;
+        card.appendChild(title);
+
+        const ul = document.createElement('ul');
+        ul.className = 'group-members';
+        group.forEach(member => {
+          const li = document.createElement('li');
+          li.textContent = member;
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+
+        groupResults.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
